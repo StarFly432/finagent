@@ -93,7 +93,7 @@ def query_agent_engine(client, session_id, user_id, query_message):
 with st.sidebar:
     st.header("Agent Engine Configuration")
     # Use details from your successful deployment output as defaults
-    project_id = st.text_input("Google Cloud Project ID", value="the-ai-lifestyle")
+    project_id = st.text_input("Google Cloud Project ID", value="agentengine1")
     location = st.text_input("Agent Engine Location", value="us-central1")
     # Extract the ID from the resource name
     agent_engine_id = st.text_input(
