@@ -6,8 +6,8 @@ import traceback
 import time
 
 # --- Configuration ---
-st.set_page_config(page_title="Vertex AI Translator", layout="wide")
-st.title("🌍 Vertex AI Agent Engine Translator")
+st.set_page_config(page_title="Financial Guide", layout="wide")
+st.title("🌍 Financial Guide")
 st.write("Interact with your deployed multi-language translation agent engine.")
 
 # --- Helper Function to Get Client (Cached) ---
@@ -20,10 +20,10 @@ def get_remote_app_client(project_id, location, agent_engine_id):
     st.write(f"Attempting to initialize Vertex AI for project '{project_id}' in '{location}'...")
     try:
         vertexai.init(project=project_id, location=location)
-        st.write("Vertex AI Initialized.")
+        st.write("Financial Guide Initialized.")
 
         # --- FIX: Use 'reasoningEngines' and Project Number in resource name ---
-        project_number = "463926261379" # From your deployment logs
+        project_number = "172357933849" # From your deployment logs
         # Correct resource type based on deployment log
         resource_name = f"projects/{project_number}/locations/{location}/reasoningEngines/{agent_engine_id}"
         # --- END FIX ---
@@ -98,7 +98,7 @@ with st.sidebar:
     # Extract the ID from the resource name
     agent_engine_id = st.text_input(
         "Agent Engine ID",
-        value="6672795331484188672", # From your log: reasoningEngines/ID
+        value="2284002310239551488", # From your log: reasoningEngines/ID
         help="Find this in the Cloud Console (Vertex AI -> Agent Engines) or deployment script output."
         )
 
