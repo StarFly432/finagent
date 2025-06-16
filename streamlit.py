@@ -3,6 +3,7 @@ import uuid
 import requests
 from google.oauth2 import service_account
 import google.auth.transport.requests
+import json
 
 # ✅ Must come first!
 st.set_page_config(page_title="Agent Engine Chat", layout="centered")
@@ -13,7 +14,7 @@ st.write("🟢 App starting...")
 # 🔹 Load secrets
 st.write("🔹 Loading secrets...")
 API_QUERY_URL = st.secrets["API_QUERY_URL"]
-SERVICE_ACCOUNT_JSON = st.secrets["SERVICE_ACCOUNT_JSON"]
+SERVICE_ACCOUNT_JSON = json.loads(st.secrets["SERVICE_ACCOUNT_JSON"])
 st.write("✅ Secrets loaded successfully.")
 
 # 🔹 Streamlit UI
