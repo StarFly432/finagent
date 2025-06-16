@@ -6,7 +6,6 @@ from google.oauth2 import service_account
 import google.auth.transport.requests
 
 # SET THESE:
-API_QUERY_URL = "import streamlit as st
 import uuid
 import json
 import requests
