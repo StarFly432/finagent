@@ -13,7 +13,7 @@ SERVICE_ACCOUNT_JSON = json.loads(st.secrets["SERVICE_ACCOUNT_JSON"])
 st.set_page_config(page_title="Agent Engine Chat", layout="centered")
 st.title("🤖 Chat with Vertex AI Agent Engine")
 
-# Generate session ID per user
+# Generate session ID per user (still useful for local state tracking)
 if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
 
@@ -47,8 +47,7 @@ if st.button("Send") and user_input:
                 "textInput": {
                     "text": user_input
                 }
-            },
-            "session": f"{API_QUERY_URL.split(':')[0]}/sessions/{st.session_state.session_id}"
+            }
         }
 
         st.code(f"🔍 POST to: {API_QUERY_URL}")
@@ -64,7 +63,6 @@ if st.button("Send") and user_input:
             raise
 
         data = response.json()
-        # This assumes the agent response is inside 'output.text'
         agent_reply = data.get("output", {}).get("text", "(No text response)")
         st.markdown("### 🤖 Agent says:")
         st.write(agent_reply)
