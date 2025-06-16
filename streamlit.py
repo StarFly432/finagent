@@ -5,16 +5,9 @@ import requests
 from google.oauth2 import service_account
 import google.auth.transport.requests
 
-# SET THESE:
-import uuid
-import json
-import requests
-from google.oauth2 import service_account
-import google.auth.transport.requests
-
-# SET THESE:
+# Load secrets
 API_QUERY_URL = st.secrets["API_QUERY_URL"]
-SERVICE_ACCOUNT_FILE = st.secrets["SERVICE_ACCOUNT_JSON"]
+SERVICE_ACCOUNT_JSON = json.loads(st.secrets["SERVICE_ACCOUNT_JSON"])
 
 # Initialize Streamlit UI
 st.set_page_config(page_title="Agent Engine Chat", layout="centered")
@@ -24,10 +17,10 @@ st.title("🤖 Chat with Vertex AI Agent (via Service Account)")
 if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
 
-# Authenticate with service account
+# Authenticate with service account JSON
 def get_access_token():
-    credentials = service_account.Credentials.from_service_account_file(
-        SERVICE_ACCOUNT_FILE,
+    credentials = service_account.Credentials.from_service_account_info(
+        SERVICE_ACCOUNT_JSON,
         scopes=["https://www.googleapis.com/auth/cloud-platform"]
     )
     auth_req = google.auth.transport.requests.Request()
@@ -45,6 +38,7 @@ if st.button("Send") and user_input:
         "Content-Type": "application/json"
     }
 
+    # Build the request payload
     payload = {
         "queryInput": {
             "text": {
@@ -52,7 +46,7 @@ if st.button("Send") and user_input:
             },
             "languageCode": "en"
         },
-        "session": f"projects/YOUR_PROJECT_ID/locations/us-central1/agents/YOUR_AGENT_ID/sessions/{st.session_state.session_id}"
+        "session": f"{API_QUERY_URL.split(':')[0]}/sessions/{st.session_state.session_id}"
     }
 
     try:
@@ -71,8 +65,7 @@ if st.button("Send") and user_input:
         st.write(agent_reply)
 
     except Exception as e:
-        st.error(f"Error communicating with Agent Engine: {e}")"
-SERVICE_ACCOUNT_FILE = "path/to/your-service-account.json"
+        st.error(f"Error communicating with Agent Engine: {e}")
 
 # Initialize Streamlit UI
 st.set_page_config(page_title="Agent Engine Chat", layout="centered")
