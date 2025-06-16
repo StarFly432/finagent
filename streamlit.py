@@ -14,8 +14,8 @@ from google.oauth2 import service_account
 import google.auth.transport.requests
 
 # SET THESE:
-API_QUERY_URL = "https://us-central1-agentapi.googleapis.com/v1alpha2/projects/YOUR_PROJECT_ID/locations/us-central1/agents/YOUR_AGENT_ID:detectIntent"
-SERVICE_ACCOUNT_FILE = "path/to/your-service-account.json"
+API_QUERY_URL = st.secrets["API_QUERY_URL"]
+SERVICE_ACCOUNT_FILE = st.secrets["SERVICE_ACCOUNT_FILE"]
 
 # Initialize Streamlit UI
 st.set_page_config(page_title="Agent Engine Chat", layout="centered")
