@@ -9,10 +9,11 @@ import google.auth.transport.requests
 API_QUERY_URL = st.secrets["API_QUERY_URL"]
 SERVICE_ACCOUNT_JSON = json.loads(st.secrets["SERVICE_ACCOUNT_JSON"])
 
-# UI setup
+# Page setup
 st.set_page_config(page_title="Agent Engine Chat", layout="centered")
 st.title("🤖 Chat with Vertex AI Agent Engine")
 
+# Generate session ID per user
 if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
 
@@ -28,7 +29,7 @@ def get_access_token():
     st.write("✅ Access token obtained.")
     return credentials.token
 
-# Input UI
+# Text input
 user_input = st.text_input("You:", "")
 
 if st.button("Send") and user_input:
@@ -42,10 +43,12 @@ if st.button("Send") and user_input:
         }
 
         payload = {
-            "query": {
-                "text": user_input
+            "input": {
+                "textInput": {
+                    "text": user_input
+                }
             },
-            "sessionId": st.session_state.session_id
+            "session": f"{API_QUERY_URL.split(':')[0]}/sessions/{st.session_state.session_id}"
         }
 
         st.code(f"🔍 POST to: {API_QUERY_URL}")
@@ -61,7 +64,8 @@ if st.button("Send") and user_input:
             raise
 
         data = response.json()
-        agent_reply = data.get("response", {}).get("text", "(No text response)")
+        # This assumes the agent response is inside 'output.text'
+        agent_reply = data.get("output", {}).get("text", "(No text response)")
         st.markdown("### 🤖 Agent says:")
         st.write(agent_reply)
 
