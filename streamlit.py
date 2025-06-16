@@ -15,7 +15,7 @@ import google.auth.transport.requests
 
 # SET THESE:
 API_QUERY_URL = st.secrets["API_QUERY_URL"]
-SERVICE_ACCOUNT_FILE = st.secrets["SERVICE_ACCOUNT_FILE"]
+SERVICE_ACCOUNT_FILE = st.secrets["SERVICE_ACCOUNT_JSON"]
 
 # Initialize Streamlit UI
 st.set_page_config(page_title="Agent Engine Chat", layout="centered")
