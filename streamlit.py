@@ -57,13 +57,10 @@ if st.button("Send") and user_input:
         session = f"{session_base}/sessions/{st.session_state.session_id}"
 
         payload = {
-            "queryInput": {
-                "text": {
-                    "text": user_input
-                },
-                "languageCode": "en"
+            "query": {
+                "text": user_input
             },
-            "session": session
+            "sessionId": st.session_state.session_id
         }
 
         st.write("📡 Sending POST request...")
