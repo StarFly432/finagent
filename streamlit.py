@@ -4,6 +4,9 @@ import requests
 from google.oauth2 import service_account
 import google.auth.transport.requests
 
+# ✅ Must come first!
+st.set_page_config(page_title="Agent Engine Chat", layout="centered")
+
 # 🔹 App start
 st.write("🟢 App starting...")
 
@@ -13,11 +16,10 @@ API_QUERY_URL = st.secrets["API_QUERY_URL"]
 SERVICE_ACCOUNT_JSON = st.secrets["SERVICE_ACCOUNT_JSON"]
 st.write("✅ Secrets loaded successfully.")
 
-# 🔹 Streamlit UI setup
-st.set_page_config(page_title="Agent Engine Chat", layout="centered")
+# 🔹 Streamlit UI
 st.title("🤖 Chat with Vertex AI Agent (via Service Account)")
 
-# 🔹 Generate session ID if not set
+# 🔹 Generate session ID
 if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
 st.write(f"🆔 Session ID: {st.session_state.session_id}")
@@ -42,20 +44,17 @@ if st.button("Send") and user_input:
     st.write("📨 Sending request to agent...")
 
     try:
-        # 🔐 Get token
         access_token = get_access_token()
 
-        # 🧾 Headers
         headers = {
             "Authorization": f"Bearer {access_token}",
             "Content-Type": "application/json"
         }
 
-        # 🧩 Create session path from API_QUERY_URL
+        # Build session path
         session_base = API_QUERY_URL.split(":")[0]
         session = f"{session_base}/sessions/{st.session_state.session_id}"
 
-        # 📦 Payload
         payload = {
             "queryInput": {
                 "text": {
@@ -72,7 +71,6 @@ if st.button("Send") and user_input:
         data = response.json()
         st.write("✅ Response received.")
 
-        # 🤖 Parse response
         messages = data.get("queryResult", {}).get("responseMessages", [])
         if messages:
             agent_reply = messages[0].get("text", {}).get("text", [""])[0]
