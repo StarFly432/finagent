@@ -8,24 +8,23 @@ import google.auth.transport.requests
 # Set page config FIRST
 st.set_page_config(page_title="Agent Chat", layout="centered")
 
-# Load secrets from Streamlit
+# Load secrets
 try:
-    API_QUERY_URL = st.secrets["API_QUERY_URL"]
+    API_QUERY_URL_BASE = st.secrets["API_QUERY_URL"]  # Without `:query`
     SERVICE_ACCOUNT_JSON = json.loads(st.secrets["SERVICE_ACCOUNT_JSON"])
 except Exception as e:
-    st.error("Failed to load API secrets.")
+    st.error("❌ Failed to load secrets.")
     st.stop()
 
 st.title("🤖 Vertex AI Agent Chat")
 
-# Generate session ID for user
+# Session ID
 if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
 
-# Get access token from service account
+# Get access token
 def get_access_token():
     try:
-        st.info("🔐 Generating credentials...")
         credentials = service_account.Credentials.from_service_account_info(
             SERVICE_ACCOUNT_JSON,
             scopes=["https://www.googleapis.com/auth/cloud-platform"]
@@ -34,34 +33,41 @@ def get_access_token():
         credentials.refresh(auth_req)
         return credentials.token
     except Exception as e:
-        st.error(f"Failed to get access token: {e}")
+        st.error(f"❌ Error getting token: {e}")
         st.stop()
 
-# Input box
+# UI input
 user_input = st.text_input("You:", "")
 
 if st.button("Send") and user_input:
+    st.info("📨 Sending request to Vertex AI Reasoning Engine...")
+
     try:
-        st.info("📨 Sending request to agent...")
-        access_token = get_access_token()
+        token = get_access_token()
 
         headers = {
-            "Authorization": f"Bearer {access_token}",
+            "Authorization": f"Bearer {token}",
             "Content-Type": "application/json"
         }
 
+        # API URL must include the session ID
+        full_url = f"{API_QUERY_URL_BASE}/sessions/{st.session_state.session_id}:query"
+
         payload = {
-            "query": user_input,
-            "sessionId": st.session_state.session_id
+            "queryInput": {
+                "text": {
+                    "text": user_input
+                },
+                "languageCode": "en"
+            }
         }
 
-        response = requests.post(API_QUERY_URL, headers=headers, json=payload)
+        response = requests.post(full_url, headers=headers, json=payload)
         response.raise_for_status()
         data = response.json()
 
-        st.success("✅ Agent responded!")
         st.markdown("### 🤖 Agent says:")
-        st.write(data)
+        st.json(data)
 
     except requests.exceptions.HTTPError as e:
         st.error(f"❌ HTTP error: {e}")
@@ -70,6 +76,5 @@ if st.button("Send") and user_input:
                 st.json(e.response.json())
             except:
                 st.text(e.response.text)
-
     except Exception as e:
         st.error(f"❌ General error: {e}")
