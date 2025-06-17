@@ -41,8 +41,11 @@ if st.button("Send") and user_input:
             "Content-Type": "application/json"
         }
 
+        # Payload must match the API spec:
         payload = {
-            "input": user_input
+            "input": {
+                "user_input": user_input  # adjust key based on your agent engine config
+            }
         }
 
         st.code(f"🔍 POST to: {API_QUERY_URL}")
@@ -58,9 +61,10 @@ if st.button("Send") and user_input:
             raise
 
         data = response.json()
-        agent_reply = data.get("response", {}).get("text", "(No text response)")
+
+        # If your agent returns a response in a custom field, you may need to adjust this:
         st.markdown("### 🤖 Agent says:")
-        st.write(agent_reply)
+        st.write(data.get("response", data))
 
     except Exception as e:
         st.error(f"❌ General error: {e}")
