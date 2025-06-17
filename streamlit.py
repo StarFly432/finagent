@@ -1,72 +1,91 @@
 import streamlit as st
 import json
 import requests
+import uuid
 from google.oauth2 import service_account
-from google.auth.transport.requests import Request
+import google.auth.transport.requests
 
-# Load from Streamlit secrets
+# Load secrets
 PROJECT_ID = st.secrets["PROJECT_ID"]
 LOCATION = st.secrets["LOCATION"]
 REASONING_ENGINE_ID = st.secrets["REASONING_ENGINE_ID"]
-SERVICE_ACCOUNT_INFO = json.loads(st.secrets["SERVICE_ACCOUNT_JSON"])
+SERVICE_ACCOUNT_JSON = json.loads(st.secrets["SERVICE_ACCOUNT_JSON"])
 
-# API endpoint (includes :query)
-API_URL = (
-    f"https://{LOCATION}-aiplatform.googleapis.com/v1/"
-    f"projects/{PROJECT_ID}/locations/{LOCATION}/reasoningEngines/{REASONING_ENGINE_ID}:query"
-)
+# API base
+API_BASE = f"https://{LOCATION}-aiplatform.googleapis.com/v1/projects/{PROJECT_ID}/locations/{LOCATION}/reasoningEngines/{REASONING_ENGINE_ID}"
 
-# Page UI
-st.set_page_config(page_title="Vertex AI Agent", layout="centered")
-st.title("🧠 Vertex AI Agent Engine")
+# UI
+st.set_page_config(page_title="Vertex Agent Chat", layout="centered")
+st.title("💬 Chat with Vertex AI Agent")
 
-# Token function
-@st.cache_data(show_spinner=False)
+# Store session ID
+if "session_id" not in st.session_state:
+    st.session_state.session_id = None
+
+# Auth token
 def get_access_token():
     credentials = service_account.Credentials.from_service_account_info(
-        SERVICE_ACCOUNT_INFO,
-        scopes=["https://www.googleapis.com/auth/cloud-platform"]
+        SERVICE_ACCOUNT_JSON,
+        scopes=["https://www.googleapis.com/auth/cloud-platform"],
     )
-    credentials.refresh(Request())
+    auth_req = google.auth.transport.requests.Request()
+    credentials.refresh(auth_req)
     return credentials.token
 
-# Chat input
-user_input = st.text_input("Ask the agent:", "")
-
-if st.button("Send") and user_input:
-    st.write("📨 Sending request...")
-
-    try:
-        token = get_access_token()
-    except Exception as e:
-        st.error(f"❌ Auth Error: {e}")
-        st.stop()
-
+# Create a session
+def create_session():
+    access_token = get_access_token()
+    url = f"{API_BASE}/sessions"
     headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json"
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
     }
+    session_uuid = str(uuid.uuid4())
+    payload = {"sessionId": session_uuid}
 
-    # ✅ CORRECT payload format with `class_method`
+    res = requests.post(url, headers=headers, json=payload)
+    res.raise_for_status()
+    session = res.json()
+    return session["name"]  # Full session path
+
+# Send a message
+def send_input_to_agent(session_path, user_input):
+    access_token = get_access_token()
+    url = f"https://{LOCATION}-aiplatform.googleapis.com/v1/{session_path}:interact"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+    }
     payload = {
-        "class_method": "query",
-        "input": {
-            "input": user_input
+        "interactRequest": {
+            "input": {"textInput": {"text": user_input}}
         }
     }
+    res = requests.post(url, headers=headers, json=payload)
+    res.raise_for_status()
+    return res.json()
 
-    st.code(f"POST {API_URL}")
-    st.code(json.dumps(payload, indent=2))
+# User input
+user_input = st.text_input("You:", "")
 
+# Handle interaction
+if st.button("Send") and user_input:
     try:
-        response = requests.post(API_URL, headers=headers, json=payload)
-        response.raise_for_status()
-        data = response.json()
-        agent_output = data.get("output", "(No output received)")
-        st.subheader("🤖 Agent says:")
-        st.write(agent_output)
-    except requests.exceptions.HTTPError as http_err:
-        st.error(f"❌ HTTP error: {http_err}")
-        st.code(response.text)
+        st.write("📨 Sending request to agent...")
+
+        if not st.session_state.session_id:
+            st.write("🧠 Creating session...")
+            st.session_state.session_id = create_session()
+            st.success("✅ Session created.")
+
+        # Send user input
+        session_path = st.session_state.session_id
+        response = send_input_to_agent(session_path, user_input)
+
+        # Display agent reply
+        reply_text = response.get("interactResponse", {}).get("output", {}).get("textOutput", {}).get("text", "(No response)")
+        st.markdown("### 🤖 Agent says:")
+        st.write(reply_text)
+
     except Exception as e:
-        st.error(f"❌ General error: {e}")
+        st.error(f"❌ Error: {e}")
