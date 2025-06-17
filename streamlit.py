@@ -17,7 +17,7 @@ st.title("🤖 Chat with Vertex AI Reasoning Engine")
 if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
 
-user_input = st.text_input("You:", "")
+user_input = st.text_input("Ask a question:", "")
 
 if st.button("Send") and user_input:
     try:
@@ -32,11 +32,14 @@ if st.button("Send") and user_input:
 
         reasoning_engine = reasoning_engines.ReasoningEngine(REASONING_ENGINE_ID)
 
-        st.info("📨 Sending request...")
-        response = reasoning_engine.query(query=user_input)
+        st.info("📨 Sending query...")
+        response = reasoning_engine.query(question=user_input)  # Note: use a valid named argument
 
         st.success("🤖 Agent says:")
         st.write(str(response))
 
+    except AttributeError as ae:
+        st.error("❌ The `.query()` method is not available. Please confirm you are using google-cloud-aiplatform >= 1.49.0.")
+        st.exception(ae)
     except Exception as e:
         st.error(f"❌ Error: {e}")
