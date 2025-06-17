@@ -45,8 +45,7 @@ if st.button("Send") and user_input:
 
     # ✅ CORRECT payload for reasoningEngines:query
     payload = {
-        "query": user_input,
-        "sessionId": st.session_state.session_id
+        "input": user_input
     }
 
     try:
