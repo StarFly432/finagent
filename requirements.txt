@@ -1,2 +1,2 @@
 streamlit
-google-cloud-aiplatform
+google-cloud-aiplatform>=1.49.0
