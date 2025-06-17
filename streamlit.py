@@ -1,45 +1,73 @@
 import streamlit as st
 import json
-import uuid
+import requests
 from google.oauth2 import service_account
-import vertexai
-from vertexai.preview import reasoning_engines
+from google.auth.transport.requests import Request
 
-# Load secrets
+# Load configuration from secrets
 PROJECT_ID = st.secrets["PROJECT_ID"]
+LOCATION = st.secrets["LOCATION"]
 REASONING_ENGINE_ID = st.secrets["REASONING_ENGINE_ID"]
-SERVICE_ACCOUNT_JSON = json.loads(st.secrets["SERVICE_ACCOUNT_JSON"])
+SERVICE_ACCOUNT_INFO = json.loads(st.secrets["SERVICE_ACCOUNT_JSON"])
 
-# UI
-st.set_page_config(page_title="Vertex Reasoning Engine", layout="centered")
+# Construct the Reasoning Engine API URL
+API_URL = (
+    f"https://{LOCATION}-aiplatform.googleapis.com/v1beta1/projects/"
+    f"{PROJECT_ID}/locations/{LOCATION}/reasoningEngines/{REASONING_ENGINE_ID}:query"
+)
+
+# Set page configuration
+st.set_page_config(page_title="Vertex AI Agent Chat", layout="centered")
 st.title("🤖 Chat with Vertex AI Reasoning Engine")
 
-if "session_id" not in st.session_state:
-    st.session_state.session_id = str(uuid.uuid4())
+# Function to get OAuth access token from service account
+@st.cache_data(show_spinner=False)
+def get_access_token():
+    credentials = service_account.Credentials.from_service_account_info(
+        SERVICE_ACCOUNT_INFO,
+        scopes=["https://www.googleapis.com/auth/cloud-platform"]
+    )
+    credentials.refresh(Request())
+    return credentials.token
 
-user_input = st.text_input("Ask a question:", "")
+# UI input field
+user_input = st.text_input("You:", "")
 
 if st.button("Send") and user_input:
+    st.write("📨 Sending request to Vertex AI Reasoning Engine...")
+
+    # Get token
     try:
-        st.info("🔐 Authenticating with Vertex AI...")
-
-        credentials = service_account.Credentials.from_service_account_info(
-            SERVICE_ACCOUNT_JSON,
-            scopes=["https://www.googleapis.com/auth/cloud-platform"]
-        )
-
-        vertexai.init(project=PROJECT_ID, location="us-central1", credentials=credentials)
-
-        reasoning_engine = reasoning_engines.ReasoningEngine(REASONING_ENGINE_ID)
-
-        st.info("📨 Sending query...")
-        response = reasoning_engine.query(question=user_input)
-
-        st.success("🤖 Agent says:")
-        st.write(str(response))
-
-    except AttributeError as ae:
-        st.error("❌ The `.query()` method is not available. Please confirm you are using google-cloud-aiplatform >= 1.49.0.")
-        st.exception(ae)
+        access_token = get_access_token()
     except Exception as e:
-        st.error(f"❌ Error: {e}")
+        st.error(f"❌ Failed to authenticate: {e}")
+        st.stop()
+
+    # Prepare request headers and payload
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json; charset=utf-8"
+    }
+
+    payload = {
+        "input": {
+            "input": user_input
+        }
+    }
+
+    st.code(f"🔗 POST {API_URL}")
+    st.code(f"📦 Payload:\n{json.dumps(payload, indent=2)}")
+
+    # Send request
+    try:
+        response = requests.post(API_URL, headers=headers, json=payload)
+        response.raise_for_status()
+        result = response.json()
+        st.subheader("🤖 Agent says:")
+        st.write(result.get("output", "(No output from agent)"))
+
+    except requests.exceptions.HTTPError as http_err:
+        st.error(f"❌ HTTP error: {http_err}")
+        st.code(f"🔻 Response:\n{response.text}")
+    except Exception as e:
+        st.error(f"❌ General error: {e}")
