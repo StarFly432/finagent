@@ -43,7 +43,7 @@ if st.button("Send") and user_input:
         }
 
         payload = {
-            "input": {
+            "session": {
                 "textInput": {
                     "text": user_input
                 }
