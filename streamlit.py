@@ -4,23 +4,23 @@ import requests
 from google.oauth2 import service_account
 from google.auth.transport.requests import Request
 
-# Load values from Streamlit secrets
+# Load from Streamlit secrets
 PROJECT_ID = st.secrets["PROJECT_ID"]
 LOCATION = st.secrets["LOCATION"]
 REASONING_ENGINE_ID = st.secrets["REASONING_ENGINE_ID"]
 SERVICE_ACCOUNT_INFO = json.loads(st.secrets["SERVICE_ACCOUNT_JSON"])
 
-# Build API endpoint
+# API endpoint (includes :query)
 API_URL = (
-    f"https://{LOCATION}-aiplatform.googleapis.com/v1beta1/"
+    f"https://{LOCATION}-aiplatform.googleapis.com/v1/"
     f"projects/{PROJECT_ID}/locations/{LOCATION}/reasoningEngines/{REASONING_ENGINE_ID}:query"
 )
 
-# Streamlit UI
-st.set_page_config(page_title="Agent Chat", layout="centered")
-st.title("🧠 Vertex AI Agent Engine Chat")
+# Page UI
+st.set_page_config(page_title="Vertex AI Agent", layout="centered")
+st.title("🧠 Vertex AI Agent Engine")
 
-# Authenticate with service account
+# Token function
 @st.cache_data(show_spinner=False)
 def get_access_token():
     credentials = service_account.Credentials.from_service_account_info(
@@ -30,36 +30,34 @@ def get_access_token():
     credentials.refresh(Request())
     return credentials.token
 
-# Input UI
-user_input = st.text_input("You:", "")
+# Chat input
+user_input = st.text_input("Ask the agent:", "")
 
 if st.button("Send") and user_input:
     st.write("📨 Sending request...")
 
-    # Step 1: Authenticate
     try:
-        access_token = get_access_token()
+        token = get_access_token()
     except Exception as e:
-        st.error(f"❌ Auth error: {e}")
+        st.error(f"❌ Auth Error: {e}")
         st.stop()
 
-    # Step 2: Prepare request
     headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json; charset=utf-8"
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
     }
 
+    # ✅ CORRECT payload format with `class_method`
     payload = {
+        "class_method": "query",
         "input": {
             "input": user_input
         }
     }
 
-    # Debug info
     st.code(f"POST {API_URL}")
-    st.code(f"📦 Payload:\n{json.dumps(payload, indent=2)}")
+    st.code(json.dumps(payload, indent=2))
 
-    # Step 3: Send request
     try:
         response = requests.post(API_URL, headers=headers, json=payload)
         response.raise_for_status()
