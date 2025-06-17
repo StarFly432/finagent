@@ -33,7 +33,7 @@ if st.button("Send") and user_input:
         reasoning_engine = reasoning_engines.ReasoningEngine(REASONING_ENGINE_ID)
 
         st.info("📨 Sending query...")
-        response = reasoning_engine.query(question=user_input)  # Note: use a valid named argument
+        response = reasoning_engine.query(question=user_input)
 
         st.success("🤖 Agent says:")
         st.write(str(response))
