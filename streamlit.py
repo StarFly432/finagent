@@ -4,23 +4,23 @@ import requests
 from google.oauth2 import service_account
 from google.auth.transport.requests import Request
 
-# Load configuration from secrets
+# Load values from Streamlit secrets
 PROJECT_ID = st.secrets["PROJECT_ID"]
 LOCATION = st.secrets["LOCATION"]
 REASONING_ENGINE_ID = st.secrets["REASONING_ENGINE_ID"]
 SERVICE_ACCOUNT_INFO = json.loads(st.secrets["SERVICE_ACCOUNT_JSON"])
 
-# Construct the Reasoning Engine API URL
+# Build API endpoint
 API_URL = (
-    f"https://{LOCATION}-aiplatform.googleapis.com/v1beta1/projects/"
-    f"{PROJECT_ID}/locations/{LOCATION}/reasoningEngines/{REASONING_ENGINE_ID}:query"
+    f"https://{LOCATION}-aiplatform.googleapis.com/v1beta1/"
+    f"projects/{PROJECT_ID}/locations/{LOCATION}/reasoningEngines/{REASONING_ENGINE_ID}:query"
 )
 
-# Set page configuration
-st.set_page_config(page_title="Vertex AI Agent Chat", layout="centered")
-st.title("🤖 Chat with Vertex AI Reasoning Engine")
+# Streamlit UI
+st.set_page_config(page_title="Agent Chat", layout="centered")
+st.title("🧠 Vertex AI Agent Engine Chat")
 
-# Function to get OAuth access token from service account
+# Authenticate with service account
 @st.cache_data(show_spinner=False)
 def get_access_token():
     credentials = service_account.Credentials.from_service_account_info(
@@ -30,20 +30,20 @@ def get_access_token():
     credentials.refresh(Request())
     return credentials.token
 
-# UI input field
+# Input UI
 user_input = st.text_input("You:", "")
 
 if st.button("Send") and user_input:
-    st.write("📨 Sending request to Vertex AI Reasoning Engine...")
+    st.write("📨 Sending request...")
 
-    # Get token
+    # Step 1: Authenticate
     try:
         access_token = get_access_token()
     except Exception as e:
-        st.error(f"❌ Failed to authenticate: {e}")
+        st.error(f"❌ Auth error: {e}")
         st.stop()
 
-    # Prepare request headers and payload
+    # Step 2: Prepare request
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json; charset=utf-8"
@@ -55,19 +55,20 @@ if st.button("Send") and user_input:
         }
     }
 
-    st.code(f"🔗 POST {API_URL}")
+    # Debug info
+    st.code(f"POST {API_URL}")
     st.code(f"📦 Payload:\n{json.dumps(payload, indent=2)}")
 
-    # Send request
+    # Step 3: Send request
     try:
         response = requests.post(API_URL, headers=headers, json=payload)
         response.raise_for_status()
-        result = response.json()
+        data = response.json()
+        agent_output = data.get("output", "(No output received)")
         st.subheader("🤖 Agent says:")
-        st.write(result.get("output", "(No output from agent)"))
-
+        st.write(agent_output)
     except requests.exceptions.HTTPError as http_err:
         st.error(f"❌ HTTP error: {http_err}")
-        st.code(f"🔻 Response:\n{response.text}")
+        st.code(response.text)
     except Exception as e:
         st.error(f"❌ General error: {e}")
