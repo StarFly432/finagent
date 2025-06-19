@@ -8,8 +8,7 @@ from google.oauth2 import service_account
 PROJECT_ID = st.secrets["PROJECT_ID"]
 LOCATION = st.secrets["LOCATION"]
 AGENT_ENGINE_ID = st.secrets["AGENT_ENGINE_ID"]
-SERVICE_ACCOUNT_INFO = st.secrets["SERVICE_ACCOUNT_JSON"]
-
+SERVICE_ACCOUNT_INFO = dict(st.secrets["SERVICE_ACCOUNT_JSON"])
 # Set page config
 st.set_page_config(page_title="Agent Engine Chat", layout="centered")
 st.title("🤖 Chat with Vertex AI Agent Engine")
